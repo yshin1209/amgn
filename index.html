@@ -72,17 +72,27 @@
             </div>
             <div id = "inputPanel">
                 <label for="numX">Number of x (horizontal) components (1 - 50):</label>
-                <input type="number" class="form-control" id="numX" value="30">
-                <label class="control-label col-sm-4" for="numY">Number of y (vertical) components (1 - 50):</label>
-                <input type="number" class="form-control" id="numY" value="30">
-                <label class="control-label col-sm-4" for="numY">Select the region of random antigen simulation:</label>
-                <label class="control-label col-sm-4" for="numY">Min x: </label>
-                <input type="number" class="form-control" id="minX" value="30">
-                <label class="control-label col-sm-4" for="numY">Max x: </label>
-                <input type="number" class="form-control" id="maxX" value="30">
-                <label><input type="checkbox" id = "o2" checked> Show extracellular IL-2 (green)</label>
-                <label><input type="checkbox" id = "i2"> Show intracellular IL-2 (red)</label>
-                <label><input type="checkbox" id = "rotateCamera"> Auto camera rotation</label>
+                <input type="number" id="numX" value="50"><br>
+                <label for="numY">Number of y (vertical) components (1 - 50):</label>
+                <input type="number"  id="numY" value="50"><br>
+                <label>Select the region of random antigen simulation:</label><br>
+                <label for="minX">Min x: </label>
+                <input type="number" id="minX" value="20">
+                <label for="maxX">Max x: </label>
+                <input type="number" id="maxX" value="30">
+                <label for="minY">Min y: </label>
+                <input type="number" id="minY" value="20">
+                <label for="maxY">Max y: </label>
+                <input type="number" id="maxY" value="30" ><br>
+                <label for="agLevel">Antigen Level: </label>
+                <input type="number" id="agLevel" value="50"><br>
+                <label for="probAgStim">Probability for each cell to be selected for antigen stimulation: </label>
+                <input type="number" id="probAgStim" value="0.2"><br>
+                <label for="diffusion">Diffusion coefficeint: </label>
+                <input type="number" id="diffusion" value="0.1"><br>
+                <input type="checkbox" id = "o2" checked> Show extracellular IL-2 (green)<br>
+                <input type="checkbox" id = "i2"> Show intracellular IL-2 (red)<br>
+                <input type="checkbox" id = "rotateCamera"> Auto camera rotation
             </div>
         </div>
 
@@ -94,7 +104,6 @@
 
             var canvas = document.getElementById("canvas1");
             var engine = new BABYLON.Engine(canvas, true);
-
             createScene = function () {
                 // This creates a basic Babylon Scene object (non-mesh)
                 var scene = new BABYLON.Scene(engine);
@@ -102,9 +111,16 @@
                 // Unit (environment & cell) size
                 var size = 1;
 
-                // Number of horizontal (x) and vertical (y) components
+                // User input values
                 var numX = document.getElementById("numX").value;
                 var numY = document.getElementById("numY").value;
+                var minX = document.getElementById("minX").value;
+                var maxX = document.getElementById("maxX").value;
+                var minY = document.getElementById("minY").value;
+                var maxY = document.getElementById("maxY").value;
+                var agLevel = document.getElementById("agLevel").value;
+                var probAgStim = document.getElementById("probAgStim").value;
+                var diffusion = document.getElementById("diffusion").value;
 
                 // ArcRotateCamera >> Camera turning around a 3D point (here Vector zero) with mouse and cursor keys
                 // Parameters : name, alpha, beta, radius, target, scene
@@ -195,11 +211,12 @@
                 }
 
                 //Randomly select cells for antigen activation
+
                 for (var x = 0; x < numX; x++) {
                     for (var y = 0; y < numY; y++) {
 
-                        if (Math.random () > 0.8 && x > numX/3 && x < (numX*2)/3 && y > numY/3 && y <(numY*2)/3) {
-                            antigen[x][y] = 50;
+                        if (Math.random () < probAgStim && x > minX && x < maxX && y > minY && y < maxY) {
+                            antigen[x][y] = agLevel;
                         }
                         else  antigen[x][y] = 0;
                     }
@@ -212,7 +229,7 @@
                 var epsilon = 0.000001;
                 var w1 = 0.1;
                 var w2 = 0.1;
-                var iteration = 0
+                var iteration = 0;
                 scene.registerBeforeRender(function () {
 
                     if (document.getElementById("rotateCamera").checked) {
@@ -237,7 +254,7 @@
                     // diffusion
                     for (var x = 1; x < numX - 1; x++) {
                         for (var y = 1; y < numY - 1; y++) {
-                            env[x][y].material.alpha += 0.1 * (env[x + 1][y].material.alpha - 2 * env[x][y].material.alpha + env[x - 1][y].material.alpha
+                            env[x][y].material.alpha += diffusion * (env[x + 1][y].material.alpha - 2 * env[x][y].material.alpha + env[x - 1][y].material.alpha
                                     + env[x][y + 1].material.alpha - 2 * env[x][y].material.alpha + env[x][y - 1].material.alpha);
                         }
                     }
@@ -257,7 +274,7 @@
                     document.getElementById("inputPanel").style.display = "none";
                     scene = createScene();
 
-                };
+                }
 
                 document.getElementById("run").disabled = true;
                 document.getElementById("pause").disabled = false;
@@ -265,7 +282,7 @@
                 engine.runRenderLoop(function () {
                     scene.render();
                 });
-            };
+            }
 
             function pause() {
             document.getElementById("run").disabled = false;
