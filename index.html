@@ -44,7 +44,6 @@
                 opacity: 0.9;
                 touch-action: none;
             }
-
             #userInterface {
                 position: absolute;
                 left: 20px;
@@ -104,6 +103,8 @@
 
             var canvas = document.getElementById("canvas1");
             var engine = new BABYLON.Engine(canvas, true);
+
+            // Create simulation scene using Babylon.js
             createScene = function () {
                 // This creates a basic Babylon Scene object (non-mesh)
                 var scene = new BABYLON.Scene(engine);
@@ -161,7 +162,6 @@
                 //Creation of environment units (boxes) and cells (spheres)
                 var envs = [];
                 var cells = [];
-
                 for (var x = 0; x < numX; x++) {
                     for (var y = 0; y < numY; y++) {
 
@@ -180,7 +180,6 @@
                         env[x][y].material.ambientColor = new BABYLON.Color3(0.2, 0.5, 0.2);
                         env[x][y].position.x = x * size;
                         env[x][y].position.y = y * size;
-
                         envs.push(env[x][y]);
 
                         //Creation of a sphere
@@ -199,7 +198,6 @@
                         cell[x][y].material.ambientColor = new BABYLON.Color3(0.8, 0.2, 0.2);
                         cell[x][y].position.x = x * size;
                         cell[x][y].position.y = y * size;
-
                             cells.push(env[x][y]);
                     }
                 }
@@ -211,7 +209,6 @@
                 }
 
                 //Randomly select cells for antigen activation
-
                 for (var x = 0; x < numX; x++) {
                     for (var y = 0; y < numY; y++) {
 
@@ -222,14 +219,16 @@
                     }
                 }
 
-                //background color
+                //Canvas background color
                 scene.clearColor = new BABYLON.Color3(1, 1, 1);
 
+                //Setting initial values for adaptation
                 var mu0 = 0.1;
                 var epsilon = 0.000001;
                 var w1 = 0.1;
                 var w2 = 0.1;
                 var iteration = 0;
+
                 scene.registerBeforeRender(function () {
 
                     if (document.getElementById("rotateCamera").checked) {
@@ -258,12 +257,11 @@
                                     + env[x][y + 1].material.alpha - 2 * env[x][y].material.alpha + env[x][y - 1].material.alpha);
                         }
                     }
-
                     iteration++;
                 });
-
                 return scene;
             };
+
             canvas.style.display = "none";
             document.getElementById("pause").disabled =true;
             document.getElementById("stop").disabled =true;
@@ -273,9 +271,7 @@
                     canvas.style.display = "block";
                     document.getElementById("inputPanel").style.display = "none";
                     scene = createScene();
-
                 }
-
                 document.getElementById("run").disabled = true;
                 document.getElementById("pause").disabled = false;
                 document.getElementById("stop").disabled = false;
@@ -289,7 +285,7 @@
             document.getElementById("pause").disabled = true;
             document.getElementById("stop").disabled = false;
             engine.stopRenderLoop();
-        };
+            };
 
             function stop() {
             document.getElementById("run").disabled = false;
@@ -299,7 +295,7 @@
             document.getElementById("iteration").innerText = "";
             canvas.style.display = "none";
             document.getElementById("inputPanel").style.display = "block";
-        };
+            };
 
             // Resize
             window.addEventListener("resize", function () {
