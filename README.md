@@ -1,5 +1,5 @@
-# amgn
-Adaptive Multicellular Gene Network Simulation
+
+# Adaptive Multicellular Gene Network Simulation
 
 Please try:
 
