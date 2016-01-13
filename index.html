@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Multicellular Adaptive Gene Network (Yong-Jun Shin, UCONN CSML 2015)</title>
+
+        <!-- External javascript files -->
+        <script src="http://www.babylonjs.com/hand.minified-1.2.js"></script>
+        <!-- <script src="http://www.babylonjs.com/cannon.js"></script>
+        <script src="http://www.babylonjs.com/oimo.js"></script> -->
+        <script src="http://www.babylonjs.com/babylon.js"></script>
+        <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
+        <!--<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>-->
+
+        <!-- External css files -->
+        <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+        <!-- Style -->
+        <style type = "text/css">
+
+            body {
+                overflow: scroll;
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                background-color:white;
+                color: black
+            }
+            #canvas1 {
+                position:absolute;
+                left: 35px;
+                top: 140px;
+                width: 600px;
+                height: 600px;
+                border: 1px solid teal;
+                touch-action: auto;
+            }
+            #control_panel {
+                position: absolute;
+                left: 20px;
+                top: 20px;
+                opacity: 0.9;
+                touch-action: none;
+            }
+
+            #input_panel {
+                position: absolute;
+                left: 20px;
+                top: 140px;
+                opacity: 0.9;
+                touch-action: none;
+            }
+
+        </style>
+
+
+
+    </head>
+
+    <!-- Body starts -->
+    <body>
+        <!-- Control panel -->
+        <div id = "control_panel" class="container">
+            <h4>Adaptive Multicellular Gene Network Simulation <font color="#a9a9a9">| UCONN CSMLab </font> <a href="http://csml.uconn.edu"><i class="w3-medium glyphicon glyphicon-home"></i></a></h4>
+            <button id = "run" onclick="run()" class="w3-btn w3-white w3-border w3-ripple glyphicon glyphicon-play" ></button>
+            <button id = "pause" onclick="pause()" class="w3-btn w3-white w3-border w3-ripple glyphicon glyphicon-pause" ></button>
+            <button id = "stop" onclick="stop()" class="w3-btn w3-white w3-border w3-ripple glyphicon glyphicon-stop" ></button>
+            <p><div id="iteration" class = "w3-tag w3-teal"></div></p>
+        </div>
+
+        <!-- Input panel -->
+        <div id = "input_panel" class="container">
+            <form class="form-horizontal" role="form">
+                <div class="form-group">
+                    <label class="control-label col-sm-3" for="numX">Number of horizontal components:</label>
+                        <div class="col-sm-1">
+                            <input type="number" class="form-control" id="numX" value="30">
+                        </div>
+                </div>
+                <div class="form-group">
+                    <label class="control-label col-sm-3" for="numY">Number of vertical components:</label>
+                        <div class="col-sm-1">
+                            <input type="number" class="form-control" id="numY" value="30">
+                        </div>
+                </div>
+                <div class="form-group">
+                    <div class="checkbox">
+                        <div class="col-sm-3 ">
+                            <label><input type="checkbox" id = "o2" checked> Show extracellular IL-2 (green)</label>
+                            <label><input type="checkbox" id = "i2"> Show intracellular IL-2 (red)</label>
+                            <label><input type="checkbox" id = "rotateCamera"> Auto camera rotation</label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Simulation canvas -->
+        <canvas id="canvas1" ></canvas>
+
+        <!-- Javascript -->
+        <script type = "text/javascript">
+
+        var canvas = document.getElementById("canvas1");
+        var engine = new BABYLON.Engine(canvas, true);
+
+        createScene = function () {
+            // This creates a basic Babylon Scene object (non-mesh)
+            var scene = new BABYLON.Scene(engine);
+
+            // Unit (environment & cell) size
+            var size = 1;
+
+            // Number of horizontal (x) and vertical (y) components
+            var numX = document.getElementById("numX").value;
+            var numY = document.getElementById("numY").value;
+
+            // ArcRotateCamera >> Camera turning around a 3D point (here Vector zero) with mouse and cursor keys
+            // Parameters : name, alpha, beta, radius, target, scene
+            var camera = new BABYLON.ArcRotateCamera("ArcRotateCamera",0,0,0, new BABYLON.Vector3(numX*size/2,numY*size/2,0), scene);
+            camera.setPosition(new BABYLON.Vector3(numX*size/2,numY*size/2,-1.5*numX*size));
+            scene.activeCamera.attachControl(canvas);
+
+            // Create light
+            var light = new BABYLON.PointLight("Light", new BABYLON.Vector3(0, 0, 20), scene);
+            light.diffuse = new BABYLON.Color3(1, 1, 1);
+            light.specular = new BABYLON.Color3(1, 1, 1);
+            light.intensity = 1;
+
+            // Create 2D array of environment units
+            var env = new Array(numX);
+            for (var x = 0; x < numX; x++) {
+                env[x] = new Array(numY);
+            }
+
+            // Create 2D array of environment unit materials
+            var materialEnv = new Array(numX);
+            for (var x = 0; x < numX; x++) {
+                materialEnv[x] = new Array(numY);
+            }
+
+            // Create 2D array of cells
+            var cell = new Array(numX);
+            for (var x = 0; x < numX; x++) {
+                cell[x] = new Array(numY);
+            }
+
+            // Create 2D array of cell unit materials
+            var materialCell = new Array(numX);
+            for (var x = 0; x < numX; x++) {
+                materialCell[x] = new Array(numY);
+            }
+
+            //Creation of environment units (boxes) and cells (spheres)
+            var envs = [];
+            var cells = [];
+
+            for (var x = 0; x < numX; x++) {
+                for (var y = 0; y < numY; y++) {
+
+                    //Creation of a box (name of the box, size, scene)
+                    env[x][y] = new BABYLON.Mesh.CreateBox("Environment", size, scene);
+                    if (document.getElementById("o2").checked) {
+                        env[x][y].visibility = 1;
+                    } else {
+                        env[x][y].visibility = 0;
+                    }
+                    materialEnv[x][y] = new BABYLON.StandardMaterial("Environment material", scene);
+                    env[x][y].material = materialEnv[x][y];
+                    env[x][y].material.alpha = 0; // initial extracellular IL-2 concentration set to zero
+                    env[x][y].material.emissiveColor = new BABYLON.Color3(0.2, 0.5, 0.2);
+                    env[x][y].material.diffuseColor = new BABYLON.Color3(0.2, 0.5, 0.2);
+                    env[x][y].material.ambientColor = new BABYLON.Color3(0.2, 0.5, 0.2);
+                    env[x][y].position.x = x * size;
+                    env[x][y].position.y = y * size;
+
+                    envs.push(env[x][y]);
+
+                    //Creation of a sphere
+                    //(name of the sphere, segments, diameter, scene)
+                    cell[x][y] = new BABYLON.Mesh.CreateSphere("Cell", 10.0, 1, scene);
+                    if (document.getElementById("i2").checked) {
+                        cell[x][y].visibility = 1;
+                    } else {
+                        cell[x][y].visibility = 0;
+                    }
+                    materialCell[x][y] = new BABYLON.StandardMaterial("Cell material", scene);
+                    cell[x][y].material = materialCell[x][y];
+                    cell[x][y].material.alpha = 0; // initial intracellular IL-2 concentration set to yero
+                    cell[x][y].material.emissiveColor = new BABYLON.Color3(0.8, 0.2, 0.2);
+                    cell[x][y].material.diffuseColor = new BABYLON.Color3(0.8, 0.2, 0.2);
+                    cell[x][y].material.ambientColor = new BABYLON.Color3(0.8, 0.2, 0.2);
+                    cell[x][y].position.x = x * size;
+                    cell[x][y].position.y = y * size;
+
+                        cells.push(env[x][y]);
+                }
+            }
+
+            // Create 2D array of antigen levels for cells
+            var antigen = new Array(numX);
+            for (var x = 0; x < numX; x++) {
+                antigen[x] = new Array(numY);
+            }
+
+            //Randomly select cells for antigen activation
+            for (var x = 0; x < numX; x++) {
+                for (var y = 0; y < numY; y++) {
+
+                    if (Math.random () > 0.8 && x > numX/3 && x < (numX*2)/3 && y > numY/3 && y <(numY*2)/3) {
+                        antigen[x][y] = 50;
+                    }
+                    else  antigen[x][y] = 0;
+                }
+            }
+
+            //background color
+            scene.clearColor = new BABYLON.Color3(1, 1, 1);
+
+            var mu0 = 0.1;
+            var epsilon = 0.000001;
+            var w1 = 0.1;
+            var w2 = 0.1;
+            var iteration = 0
+            scene.registerBeforeRender(function () {
+
+                if (document.getElementById("rotateCamera").checked) {
+                    camera.alpha += 0.01 ;
+                    camera.beta += 0;
+                    camera.radius -= 0.001*numX ;
+                }
+
+
+
+                document.getElementById("iteration").innerText = "Iteration: " + iteration;
+
+                //adaptation
+                for (var x = 1; x < numX - 1; x++) {
+                    for (var y = 1; y < numY - 1; y++) {
+                        cell[x][y].material.alpha = w1 * env[x][y].material.alpha + w2 * antigen[x][y];
+                        error = env[x][y].material.alpha - cell[x][y].material.alpha;
+                        mu = mu0 / (epsilon + Math.pow(env[x][y].material.alpha, 2) + Math.pow(antigen[x][y], 2));
+                        w1 = w1 + mu * error * env[x][y].material.alpha;
+                        w2 = w2 + mu * error * antigen[x][y];
+                        env[x][y].material.alpha = cell[x][y].material.alpha;
+                    }
+                }
+                // diffusion
+                for (var x = 1; x < numX - 1; x++) {
+                    for (var y = 1; y < numY - 1; y++) {
+                        env[x][y].material.alpha += 0.1 * (env[x + 1][y].material.alpha - 2 * env[x][y].material.alpha + env[x - 1][y].material.alpha
+                                + env[x][y + 1].material.alpha - 2 * env[x][y].material.alpha + env[x][y - 1].material.alpha);
+                    }
+                }
+
+                iteration++;
+            });
+
+            return scene;
+        };
+    canvas.style.display = "none";
+    document.getElementById("pause").disabled =true;
+    document.getElementById("stop").disabled =true;
+    function run() {
+        if (document.getElementById("stop").disabled === true)
+        {
+            canvas.style.display = "block";
+            document.getElementById("input_panel").style.display = "none";
+            scene = createScene();
+
+        };
+
+        document.getElementById("run").disabled = true;
+        document.getElementById("pause").disabled = false;
+        document.getElementById("stop").disabled = false;
+        engine.runRenderLoop(function () {
+            scene.render();
+        });
+
+    };
+
+    function pause() {
+        document.getElementById("run").disabled = false;
+        document.getElementById("pause").disabled = true;
+        document.getElementById("stop").disabled = false;
+        engine.stopRenderLoop();
+    }
+
+    function stop() {
+        document.getElementById("run").disabled = false;
+        document.getElementById("pause").disabled = true;
+        document.getElementById("stop").disabled = true;
+        engine.stopRenderLoop();
+        document.getElementById("iteration").innerText = "";
+        canvas.style.display = "none";
+        document.getElementById("input_panel").style.display = "block";
+
+    }
+
+
+
+    // Resize
+    window.addEventListener("resize", function () {
+        engine.resize();
+    });
+
+</script>
+</body>
+
+</html>
