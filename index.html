@@ -231,7 +231,7 @@
                     camera.beta += 0;
                     camera.radius -= 0.001*numX ;
                 }
-                
+
                 document.getElementById("iteration").innerText = "Iteration: " + iteration;
 
                 //adaptation
@@ -258,26 +258,25 @@
 
             return scene;
         };
-    canvas.style.display = "none";
-    document.getElementById("pause").disabled =true;
-    document.getElementById("stop").disabled =true;
-    function run() {
-        if (document.getElementById("stop").disabled === true)
-        {
-            canvas.style.display = "block";
-            document.getElementById("input_panel").style.display = "none";
-            scene = createScene();
+        canvas.style.display = "none";
+        document.getElementById("pause").disabled =true;
+        document.getElementById("stop").disabled =true;
+        function run() {
+            if (document.getElementById("stop").disabled === true)
+            {
+                canvas.style.display = "block";
+                document.getElementById("input_panel").style.display = "none";
+                scene = createScene();
 
+            };
+
+            document.getElementById("run").disabled = true;
+            document.getElementById("pause").disabled = false;
+            document.getElementById("stop").disabled = false;
+            engine.runRenderLoop(function () {
+                scene.render();
+            });
         };
-
-        document.getElementById("run").disabled = true;
-        document.getElementById("pause").disabled = false;
-        document.getElementById("stop").disabled = false;
-        engine.runRenderLoop(function () {
-            scene.render();
-        });
-
-    };
 
     function pause() {
         document.getElementById("run").disabled = false;
